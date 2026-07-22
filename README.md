@@ -1,62 +1,62 @@
-```
 # Local AI Security Auditor Agent
 
-## Overview
-The Local AI Security Auditor Agent is a robust, offline cybersecurity monitoring script designed to analyze system health, network status, and email payloads for potential threats. By leveraging a local Large Language Model (LLM) via Ollama, this agent processes sensitive system and email data entirely on your machine, ensuring zero data leakage to cloud servers.
+An offline, privacy-first cybersecurity monitoring agent powered by local LLM inference via Ollama. This tool analyzes system telemetry, runs local PowerShell network diagnostics, scans email payloads for threats, and maintains a persistent memory bank of historical security audits.
 
-It features a **Persistent Memory System** that records past audits, allowing the AI to maintain context over time, track ongoing issues, and learn from previous security alerts.
+## Features
 
-## Key Features
-* **Total Privacy (Offline AI):** Uses the local Ollama model (`supergemma4-26b-uncensored-gguf-v2:latest`) for analysis, keeping your sensitive network and email data 100% local.
-* **Hardware Diagnostics:** Monitors real-time CPU, RAM, and Disk usage using `psutil`.
-* **Network Auditing:** Integrates with a custom PowerShell network diagnostic script (`netcheck.ps1`) to check for blocked ports, suspicious traffic, or connectivity issues.
-* **Email Threat Scanning:** Ingests raw email payloads via the command line to scan for phishing attempts, malicious links, and malware signatures.
-* **Persistent Memory Bank:** Automatically logs every audit (including timestamp, task, outcome, and success state) into a JSON memory bank. The last 5 logs are injected into future prompts to provide the AI with historical context.
-* **GUI Integration Ready:** Outputs its final assessment to a `status.json` file, making it easy to hook this script up to a visual dashboard or frontend application.
+* **100% Offline & Private Analysis:** Executes threat audits locally using Ollama (`supergemma4-26b-uncensored-gguf-v2:latest`), ensuring sensitive hardware logs, network state, and email payloads are never transmitted to external cloud endpoints.
+* **Real-Time Hardware Telemetry:** Collects system performance metrics (CPU usage, virtual memory, and root/drive disk space) using `psutil`.
+* **Automated Network Diagnostics:** Triggers local PowerShell diagnostics (`netcheck.ps1`) via subprocess execution to inspect active network states and detected blockages.
+* **Email & Payload Scanning:** Ingests raw text or email files passed via command-line arguments to analyze body text for phishing vectors, malicious links, or malware signatures.
+* **Persistent Memory Bank:** Records audit results, timestamps, and status outcomes to a JSON file (`security_auditor_memory_bank.json`). The last 5 audit entries are dynamically injected into subsequent analysis prompts to provide historical context.
+* **GUI Integration Ready:** Outputs automated state updates directly to `status.json` (`critical` vs. `healthy`) for seamless integration with frontend dashboards or status UI widgets.
+
+## Directory & File Dependencies
+
+The script interacts with several local files and paths:
+
+| File / Path | Type | Description |
+| :--- | :--- | :--- |
+| `security_auditor_memory_bank.json` | JSON Output/Input | Auto-created in `DESKTOP_PATH`. Stores long-term audit history. |
+| `netcheck.ps1` | PowerShell Script | Executed to gather network diagnostic data. |
+| `security_auditor_instructions.md` | Markdown Input | Optional system instructions/guidelines for the AI auditor. |
+| `status.json` | JSON Output | Written after each run to signal system health state to external UI components. |
 
 ## Prerequisites
+
 1. **Python 3.8+**
-2. **Ollama:** Must be installed and running locally.
-3. **Required Python Packages:** 
-   pip install psutil python-dotenv ollama
-4. **Local LLM Model:** Pull the required model via Ollama:
-   ollama run hf.co/jiunsong/supergemma4-26b-uncensored-gguf-v2:latest
-   *(Note: You can change the model in the `security_auditor` function if you prefer a different local model).*
+2. **Ollama Installed & Running:** Ensure Ollama is running locally.
+3. **Pull Required Model:**
+   Run `ollama run hf.co/jiunsong/supergemma4-26b-uncensored-gguf-v2:latest` in your terminal.
+4. **Python Package Dependencies:**
+   Run `pip install psutil python-dotenv ollama`
 
-## Configuration & Setup
-Before running the script, you **must** update the hardcoded paths to match your local system environment.
+## Configuration
 
-1. **Memory Directory:** 
-   Update `DESKTOP_PATH` (around line 17) to where you want the memory JSON saved.
-   DESKTOP_PATH = r"C:\Your\Path\Here\AI_Agent_Memory"
-   
-2. **Network Diagnostics Script:** 
-   Update `script_path` (around line 59) to point to your actual PowerShell network script.
-   script_path = r"C:\Your\Path\Here\netcheck.ps1"
-   
-3. **Custom Instructions (Optional):**
-   Create a file named `security_auditor_instructions.md` in the same directory as this script. You can use this file to give the AI specific company policies or custom rules for its audit. If the file is missing, the script defaults to standard health and malware scanning.
+Update the paths defined in the script to match your local development environment:
 
-## How to Use
+**Memory Directory:**
+`DESKTOP_PATH = r"C:\Path\To\Your\AI_Agent_Memory"`
 
-Run the script from your terminal or command prompt.
+**Network Diagnostics Script:**
+`script_path = r"C:\Path\To\Your\NetworkTools\netcheck.ps1"`
 
-**Standard System & Network Audit:**
-python security_auditor.py
+## Usage
 
-**System Audit + Email Payload Scan:**
-To have the agent scan a specific email or text file for phishing/malware, pass the file path as an argument:
-python security_auditor.py "C:\Path\To\suspicious_email.txt"
+**1. Standard System & Network Audit**
+To run a routine audit on system hardware and network status:
+`python security_auditor.py`
 
-## How the Pipeline Works
-1. **Data Collection:** The script captures live CPU/RAM/Disk stats and executes your `netcheck.ps1` script to grab network status.
-2. **Payload Processing:** If an email file is provided via the CLI, it reads the contents.
-3. **Memory Injection:** It reads the last 5 entries from `security_auditor_memory_bank.json`.
-4. **AI Analysis:** All this data is bundled into a prompt and sent to the local Ollama model.
-5. **Output & State Update:** 
-   * The AI's response is printed to the terminal.
-   * If words like "CRITICAL", "MALWARE", or "PHISHING" are detected in the response, it flags the system as critical.
-   * It writes the final state ("critical" or "healthy") to `status.json`.
-   * It saves the new interaction back into the persistent Memory Bank.
+**2. Audit with Email/Payload Inspection**
+To pass a raw email file or threat payload for AI analysis, supply the file path as the first CLI argument:
+`python security_auditor.py "C:\Path\To\suspicious_email.txt"`
 
-```
+## How It Works
+
+1. **Data Gathering:** The script queries real-time CPU, RAM, and Disk metrics via `psutil` and invokes `netcheck.ps1` using PowerShell with `-ExecutionPolicy Bypass`.
+2. **Context Assembly:** System health, network output, email text, custom markdown instructions, and the 5 most recent memory logs are compiled into a unified audit prompt.
+3. **Local Inference:** The prompt is dispatched to the local Ollama instance.
+4. **Threat Detection & Logging:**
+   * If `CRITICAL`, `MALWARE`, `PHISHING`, or network `BLOCKED` keywords are flagged in the response, `status.json` updates to `"critical"`.
+   * Otherwise, `status.json` updates to `"healthy"`.
+   * The complete report is appended to `security_auditor_memory_bank.json`.
